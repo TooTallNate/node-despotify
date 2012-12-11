@@ -5,7 +5,7 @@
 
 var ffi = require('ffi');
 var debug = require('debug')('despotify');
-var assert = require('better-assert');
+var assert = require('assert');
 var inherits = require('util').inherits;
 var libdespotify = require('./libdespotify');
 var Readable = require('stream').Readable;

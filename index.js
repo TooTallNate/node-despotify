@@ -209,12 +209,20 @@ Despotify.prototype.readable = function (force) {
           return get_pcm();
         }
 
+        // has a "format" event been emitted yet?
         if (!stream.format) {
-          // TODO: emit "format" event
-          stream.format = true;
-          stream.emit('format', { channels: 2, sampleRate: 44100 });
+          var format = {
+            bitDepth: 16,
+            signed: true,
+            channels: pcm.channels,
+            sampleRate: pcm.samplerate
+          };
+          stream.format = format;
+          stream.emit('format', format);
         }
 
+        // get a slice of the buffer (however much was written to it)
+        // and send that slice out the readable end
         var buf = pcm.buf.buffer;
         if (buf.length != len) {
           buf = buf.slice(0, len);

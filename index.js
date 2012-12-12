@@ -110,6 +110,7 @@ Despotify.prototype.authenticate = function (un, pw, fn) {
  */
 
 Despotify.prototype.play = function (uri, playAsList) {
+  debug('play(%j, %s)', uri, playAsList);
   if (null == playAsList) playAsList = false;
 
   var link = libdespotify.link_from_uri(uri);
@@ -130,6 +131,44 @@ Despotify.prototype.play = function (uri, playAsList) {
 };
 
 /**
+ * Plays the next tracks in the currently playing playlist.
+ *
+ * @return {Boolean}
+ * @api public
+ */
+
+Despotify.prototype.next = function () {
+  debug('next()');
+  libdespotify.next(this.session);
+};
+
+/**
+ * Stops playback of the currently playing "track".
+ *
+ * @return {Boolean}
+ * @api public
+ */
+
+Despotify.prototype.stop = function () {
+  debug('stop()');
+  libdespotify.stop(this.session);
+};
+
+/**
+ * Attempts to get another page of PCM data.
+ * Used by the `Track` readable streams.
+ *
+ * @param {Struct} pcm_data `struct pcm_data` instance to fill
+ * @param {Function} fn callback function to invoke when done
+ * @api private
+ */
+
+Despotify.prototype._pcm = function (pcm_data, fn) {
+  debug('_pcm()');
+  libdespotify.get_pcm.async(this.session, pcm_data.buffer, fn);
+};
+
+/**
  * Returns the Readable stream associated with this spotify session. The readable
  * pulls PCM audio data out of the session while "playing".
  */
@@ -144,20 +183,21 @@ Despotify.prototype.readable = function (force) {
       stream.destroy();
     }
     // TODO: make configurable
-    this._readableStream = stream = new Readable();
+    this._readableStream = stream = new Readable({ lowWaterMark: 256 });
     stream._read = function (b, fn) {
       debug('_read(%d)', b);
 
       // get raw PCM data
       var pcm = new libdespotify.pcm_data();
 
-      function read () {
+      function get_pcm () {
+        debug('get_pcm()');
         if (stream._gotEnd) return fn(null, null); // end
-
-        libdespotify.get_pcm.async(self.session, pcm.buffer, onRead);
+        self._pcm(pcm, after_get_pcm);
       }
 
-      function onRead (err, rtn) {
+      function after_get_pcm (err, rtn) {
+        debug('after_get_pcm(%s, %s)', err, rtn);
         if (err) return fn(err);
         if (rtn) {
           // error reading...
@@ -166,11 +206,13 @@ Despotify.prototype.readable = function (force) {
         var len = pcm.len;
         if (0 == len) {
           // no bytes :(
-          return read();
+          return get_pcm();
         }
 
         if (!stream.format) {
           // TODO: emit "format" event
+          stream.format = true;
+          stream.emit('format', { channels: 2, sampleRate: 44100 });
         }
 
         var buf = pcm.buf.buffer;
@@ -181,8 +223,12 @@ Despotify.prototype.readable = function (force) {
         fn(null, buf);
       }
 
-      read();
+      get_pcm();
     };
+
+    // make _read() be called 1 time before the user gets ahold of it.
+    // this gives the "format" event an opportunity to be run.
+    //stream.read(0);
   }
   return stream;
 };
@@ -196,6 +242,7 @@ Despotify.prototype.readable = function (force) {
 Despotify.prototype.close =
 Despotify.prototype.logout = function () {
   debug('logout()');
+  this.emit('error', new Error('implement me!'));
 };
 
 /**
@@ -210,6 +257,7 @@ Despotify.prototype.logout = function () {
 
 Despotify.prototype._callback = function (session, signal, data) {
   debug('_callback(%d)', signal);
+  assert.equal(session.address(), this.session.address());
 
   switch (signal) {
     case 1: // new track
@@ -233,7 +281,7 @@ Despotify.prototype._callback = function (session, signal, data) {
       break;
 
     case 4: // track play error (e.g. georestrictions)
-      var str = lib.get_error(session);
+      var str = libdespotify.get_error(session);
       var err = new Error('track play error: ' + str);
       debug('track play error', str);
       this.emit('error', err);
@@ -243,14 +291,14 @@ Despotify.prototype._callback = function (session, signal, data) {
 
 /**
  * Creates a callback function to use as the despotify callback function so that
- * we don't lose the "this" reference.
+ * we don't lose the "this" reference to the "session" instance.
  *
  * @param {Despotify} session
  * @api private
  */
 
 function callback (session) {
-  return function () {
-    return session._callback.apply(session, arguments);
+  return function (_session, signal, data) {
+    return session._callback(_session, signal, data);
   };
 }

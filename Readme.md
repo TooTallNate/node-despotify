@@ -10,7 +10,8 @@ art, and even getting PCM audio data of the song currently playing!
 Installation
 ------------
 
-You need `libdespotify` installed. On OS X:
+You need [`libdespotify`](http://despotify.se/source-code/) installed. On OS X
+with Homebrew, run:
 
 ``` bash
 $ brew install --HEAD despotify

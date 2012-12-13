@@ -28,16 +28,16 @@ $ npm install https://github.com/TooTallNate/node-despotify/archive/master.tar.g
 Example
 -------
 
-Here's an example of initiating a Spotify session, and then retrieving the PCM
-audio data of a song and outputing it through `node-speaker`:
+Here's an example of initiating a Spotify session, starting a track to play, and
+piping the audio data to the speakers using `node-speaker`:
 
 ``` js
 var Speaker = require('speaker');
 var Despotify = require('despotify');
 
-// specify your Spotify username and password as env variables
-var username = process.env.USERNAME;
-var password = process.env.PASSWORD;
+// log in using your Spotify credentials - a Premium account is required
+var username = 'billybob';
+var password = 't3hSekretz';
 
 // create a "spotify" session
 var spotify = new Despotify();
@@ -49,11 +49,19 @@ spotify.login(username, password, function (err) {
   // get a track by URI - Champagne supernova
   var uri = 'spotify:track:4Jgp57InfWE4MxJLfheNVz';
 
-  // begin playing the song; a Readable stream is returned
-  var readable = spotify.play(uri);
-  readable.on('format', function (format) {
-    console.error('"format" event:', format);
+  // begin playing the song - a "track" event will be emitted soon
+  spotify.play(uri);
+
+  // the "track" event is emitted when a new track is beginning to play.
+  // the "track" object is a Readable stream the outputs PCM audio data.
+  spotify.on('track', function (track) {
+    console.log('new "track" starting: %j', track.title);
+
+    // the track's "format" event gets emitted when the PCM audio format is
+    // determined. at this point you probably want to start reading...
+    track.on('format', function (format) {
+      track.pipe(new Speaker(format));
+    });
   });
-  readable.pipe(new Speaker());
 });
 ```

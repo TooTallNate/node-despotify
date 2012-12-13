@@ -184,11 +184,11 @@ var signal_data = UnionType({
  */
 
 var libdespotify = ffi.Library('libdespotify', {
-  'despotify_init':[ 'bool', [ ] ],
-  'despotify_cleanup':[ 'bool', [ ] ],
+  'despotify_init': [ 'bool', [ ] ],
+  'despotify_cleanup': [ 'bool', [ ] ],
   'despotify_init_client': [ session_ptr, [ void_ptr, void_ptr, 'bool', 'bool' ] ],
   'despotify_authenticate': [ 'bool', [ session_ptr, 'string', 'string'] ],
-  'despotify_get_artist': [ artist_browse_ptr, [session_ptr, 'string'] ],
+  'despotify_get_artist': [ artist_browse_ptr, [ session_ptr, 'string'] ],
 
   'despotify_exit': [ 'void', [ session_ptr ] ],
   'despotify_set_buffer_size': [ 'void', [ session_ptr, 'int' ] ],
@@ -206,7 +206,7 @@ var libdespotify = ffi.Library('libdespotify', {
   'despotify_free_album_browse': [ 'void', [ album_browse_ptr ] ],
   'despotify_free_track': [ 'void', [ track_ptr ] ],
 
-  'despotify_search': [search_result_ptr, [ session_ptr, 'string', 'int'] ],
+  'despotify_search': [ search_result_ptr, [ session_ptr, 'string', 'int'] ],
   'despotify_search_more': [ search_result_ptr, [ session_ptr, search_result_ptr, 'int', 'int' ] ],
   'despotify_free_search': [ 'void', [ search_result_ptr ] ],
 

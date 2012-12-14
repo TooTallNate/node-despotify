@@ -30,17 +30,19 @@ process.on('exit', function () {
 module.exports = Despotify;
 
 /**
- * The `Despotify` class encapsulates a "spotify session".
+ * The `Despotify` class encapsulates a "spotify session". You can play tracks
+ * (one at a time), search the music library, and even get album art.
  *
+ * @param {Object} opts pass "highBitrate" or "useCache" options
  * @api public
  */
 
-function Despotify (highBitrate, useCache) {
+function Despotify (opts) {
   if (!(this instanceof Despotify)) return new Despotify(highBitrate, useCache);
   EventEmitter.call(this);
 
-  if (null == highBitrate) highBitrate = false;
-  if (null == useCache) useCache = false;
+  var highBitrate = (opts && opts.highBitrate) || false;
+  var useCache = (opts && opts.useCache) || false;
 
   // the callback C function pointer for the spotify session to use
   this.cb = ffi.Callback(

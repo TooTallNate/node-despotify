@@ -9,7 +9,7 @@
     "ref-array": "~0.0.3",
     "ref-struct": "~0.0.4",
     "ref-union": "~0.0.2",
-    "readable-stream": "0.0.4",
+    "readable-stream": "~0.1.0",
     "debug": "~0.7.0"
   },
   "devDependencies": {
